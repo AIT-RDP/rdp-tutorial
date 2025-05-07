@@ -1,0 +1,33 @@
+version: 1
+
+data sources:
+  geosphere.forecasts.nwp.WIEN-HOHE_WARTE:
+    type: "data_crawler.sources.zamg.NumericalWeatherPredictionData"
+    source parameter:
+      latitude: 48.24861145
+      longitude: 16.35638809
+      endpoint: NWP
+      drop missing observations: True
+    polling: # Be gentle with the Geosphere API or it will respond with timeout errors
+      frequency: 5min
+      jitter: 10sec
+      # force initial: 0
+    redis:
+      stream: "geosphere.forecasts.nwp.WIEN-HOHE_WARTE"
+      tags: # Additional Redis tags that will be appended
+        station: "11035"
+        data_provider: "ZAMG.NWP"
+        device_name: null
+
+
+redis:
+  host: redis
+  port: 6379
+  db: 0
+  password: !env-template "${REDIS_PASSWORD}"
+
+logging:
+  loggers:
+    urllib3.connectionpool:
+      level: INFO
+      handlers: ["console"]

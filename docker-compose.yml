@@ -14,6 +14,19 @@ services:
     # ports:
     #  - "6379:6379"
 
+  ## -----------------------------------------------
+  ## This micro-service retrieves weather forecasts.
+  ## -----------------------------------------------
+  weather-data-service:
+    image: ait1/rdp-data-crawler:latest-dev
+    volumes:
+      - ./weather-data-service/config.yml:/etc/data_crawler/config.yml:ro
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
   ## ---------------------------------------------------------------------------------
   ## For debugging: use Redis Insight browser to explore the content of redis streams.
   ## ---------------------------------------------------------------------------------
