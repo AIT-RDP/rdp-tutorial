@@ -113,6 +113,19 @@ services:
       - weather-data-service
     restart: unless-stopped
 
+  ## -----------------------------------------------
+  ## This micro-service retrieves weather forecasts.
+  ## -----------------------------------------------
+  frequency-data-service:
+    build: frequency-data-service
+    volumes:
+      - ./frequency-data-service/config.yml:/etc/data_crawler/config.yml:ro
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
   ## ---------------------------------------------------------------------------------
   ## For debugging: use Redis Insight browser to explore the content of redis streams.
   ## ---------------------------------------------------------------------------------

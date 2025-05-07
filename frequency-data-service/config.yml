@@ -1,0 +1,39 @@
+version: 1
+
+defaults:
+  energy_charts_url: &energy_charts_url "https://api.energy-charts.info"
+
+  freq_default_source_parameters: &freq_default_source_parameters
+    region: "UCTE"
+  freq_default_polling: &freq_default_polling # Polling interval specification
+    frequency: 60s
+    offset: 5s
+    jitter: 2s
+
+data sources:
+  # ------------------------------------------
+  # Frequency data from api.energy-charts.info
+  # ------------------------------------------
+  energy-charts.frequency:
+    type: "frequency_data_service.frequency_data_crawler.FrequencyDataCrawler"
+    source parameter:  # Parameters passed on to the data source
+      << : *freq_default_source_parameters
+    polling: *freq_default_polling
+    redis:
+      stream: "energy-charts.frequency"
+      tags: # Additional Redis tags that will be appended
+        data_provider: "api.energy-charts.info"
+        location: "Fraunhofer ISE, Freiburg"
+        unit: "Hz"
+
+redis:
+  host: redis
+  port: 6379
+  db: 0
+  password: !env-template "${REDIS_PASSWORD}"
+
+logging:
+  loggers:
+    urllib3.connectionpool:
+      level: INFO
+      handlers: ["console"]
