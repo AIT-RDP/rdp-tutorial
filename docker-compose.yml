@@ -27,6 +27,58 @@ services:
       - redis
     restart: unless-stopped
 
+  ## ----------------------------------------------------------
+  ## Use TimescaleDB for permanent storage of time series data.
+  ## ----------------------------------------------------------
+  timescale:
+    image: "timescale/timescaledb:latest-pg16"
+    environment:
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      TIMESCALEDB_TELEMETRY: "off"
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    ## Expose ports only for debugging.
+    # ports:
+    #  - "5432:5432"
+
+  ## ------------------------------------------------------------------------
+  ## This micro-service defines the database schema used by the timescale DB.
+  ## ------------------------------------------------------------------------
+  db-scheme:
+    image: ait1/rdp-database:latest-dev
+    depends_on:
+      - timescale
+    environment:
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_DATA_SOURCE_USER: ${POSTGRES_DATA_SOURCE_USER}
+      POSTGRES_DATA_SOURCE_PASSWORD: ${POSTGRES_DATA_SOURCE_PASSWORD}
+      POSTGRES_DATA_VIS_USER: ${POSTGRES_DATA_VIS_USER}
+      POSTGRES_DATA_VIS_PASSWORD: ${POSTGRES_DATA_VIS_PASSWORD}
+      POSTGRES_DATA_PUB_VIS_USER: ${POSTGRES_DATA_PUB_VIS_USER}
+      POSTGRES_DATA_PUB_VIS_PASSWORD: ${POSTGRES_DATA_PUB_VIS_PASSWORD}
+      RDP_POSTGRES_HOST: timescale
+
+  ## ----------------------------------------------------------------------------------
+  ## This micro-service stores selected data from the Redis stream to the TtimescaleDB.
+  ## ----------------------------------------------------------------------------------
+  data-sync-service:
+    image: ait1/rdp-redsql:latest-dev
+    environment:
+      POSTGRES_USER: ${POSTGRES_DATA_SOURCE_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_DATA_SOURCE_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - ./data-sync-service/config.yml:/etc/redsql/config.yml:ro
+    depends_on:
+      redis:
+        condition: service_started
+      db-scheme:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   ## ---------------------------------------------------------------------------------
   ## For debugging: use Redis Insight browser to explore the content of redis streams.
   ## ---------------------------------------------------------------------------------
@@ -45,3 +97,4 @@ services:
 
 volumes:
   redis-data:
+  timescale-data:

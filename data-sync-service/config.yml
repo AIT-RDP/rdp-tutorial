@@ -1,0 +1,52 @@
+# The version of the configuration file. Currently, only version 1 is supported.
+version: 1
+
+x-channels:
+  # ---------------------------------------------------------------------------
+  # Template for weather forecasting data formats
+  # ---------------------------------------------------------------------------
+  weather-forecasts:
+    encoding: &weather-forecasts-encoding
+      _default: "JSON"
+      forecast_time: "JSONDatetimeString"
+      observation_time: "JSONListWithDatetimeStrings"
+    steps: &weather-forecasts-steps
+      - type: "SplitByKey"
+        always include: ["forecast_time", "observation_time", "latitude", "longitude", "altitude", "station", "data_provider", "device_name"]
+        destination key: "value"
+        source output key: "observation_type"
+      - type: "CachedSQLQuery"
+        cache keys: ["station", "data_provider", "observation_type"]
+        single value: True
+        query: "SELECT get_or_create_data_point_id(:observation_type, :device_name, :station, :data_provider) AS dp_id;"
+      - type: "UnpackArrayValues"
+        unpack keys: ["observation_time", "value"]
+    data sink: &weather-forecasts-sink
+      table: "forecasts"
+      update duplicate values: True
+      columns:
+        dp_id: "dp_id"
+        obs_time: "observation_time"
+        fc_time: "forecast_time"
+        value: "value"
+
+## The list of channel configurations. Each configuration specifies a single chain of processing steps
+channels:
+  ## ---------------------------------------------------------------------------
+  ## Weather forecasting data
+  ## ---------------------------------------------------------------------------
+  geosphere.forecasts.nwp.WIEN-HOHE_WARTE:
+    trigger:
+      stream id: "geosphere.forecasts.nwp.WIEN-HOHE_WARTE"
+      trim length: 500
+    encoding: *weather-forecasts-encoding
+    steps: *weather-forecasts-steps
+    data sink: *weather-forecasts-sink
+
+## The connection to the destination database
+database connection: !env-template "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescale/rdp_db"
+redis:
+  host: redis
+  port: 6379
+  db: 0
+  password: ${REDIS_PASSWORD}
