@@ -1,0 +1,7 @@
+# Docker Compose environment definition file
+.env
+
+# Build artifacts, caches, etc.
+*__pycache__
+*.egg-info
+*.ipynb
