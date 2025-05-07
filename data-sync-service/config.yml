@@ -29,6 +29,33 @@ x-channels:
         obs_time: "observation_time"
         fc_time: "forecast_time"
         value: "value"
+  ## ---------------------------------------------------------------------------
+  ## Template for forecasting data formats from PV sim
+  ## ---------------------------------------------------------------------------
+  pv-forecast:
+    encoding: &pv-forecast-encoding
+      _default: "JSON"
+      forecast_time: "JSONDatetimeString"
+      ts_forecast: "JSONListWithDatetimeStrings"
+    steps: &pv-forecast-steps
+      - type: "SplitByKey"
+        always include: ["ts_forecast", "data_provider", "forecast_time", "location"]
+        destination key: "value"
+        source output key: "observation_type"
+      - type: "CachedSQLQuery"
+        cache keys: ["observation_type", "data_provider", "location"]
+        single value: True
+        query: "SELECT get_or_create_data_point_id(:observation_type, NULL, :location, :data_provider) AS dp_id;"
+      - type: "UnpackArrayValues"
+        unpack keys: ["ts_forecast", "value"]
+    data sink: &pv-forecast-sink
+      table: "forecasts"
+      update duplicate values: True
+      columns:
+        dp_id: "dp_id"
+        fc_time: "forecast_time"
+        obs_time: "ts_forecast"
+        value: "value"
 
 ## The list of channel configurations. Each configuration specifies a single chain of processing steps
 channels:
@@ -42,6 +69,17 @@ channels:
     encoding: *weather-forecasts-encoding
     steps: *weather-forecasts-steps
     data sink: *weather-forecasts-sink
+  ## ---------------------------------------------------------------------------
+  ## PV forecasting data
+  ## ---------------------------------------------------------------------------
+  pvsim.forecasts.WIEN-HOHE_WARTE:
+    trigger:
+      stream id: "pvsim.forecasts.WIEN-HOHE_WARTE"
+      trim length: 100
+    encoding: *pv-forecast-encoding
+    steps: *pv-forecast-steps
+    data sink: *pv-forecast-sink
+
 
 ## The connection to the destination database
 database connection: !env-template "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescale/rdp_db"

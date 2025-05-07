@@ -100,6 +100,19 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  ## ------------------------------------------------------------------------------------
+  ## This micro-service uses the latest forecast data for running a PV module simulation.
+  ## ------------------------------------------------------------------------------------
+  pv-sim-service:
+    build: pv-sim-service
+    volumes:
+      - ./pv-sim-service/config.yml:/app/config.yml:ro
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      - weather-data-service
+    restart: unless-stopped
+
   ## ---------------------------------------------------------------------------------
   ## For debugging: use Redis Insight browser to explore the content of redis streams.
   ## ---------------------------------------------------------------------------------
