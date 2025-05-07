@@ -79,6 +79,27 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  ## ----------------------------------------------------------
+  ## Use grafana for visualization of data in the timescale DB.
+  ## ----------------------------------------------------------
+  grafana:
+    image: grafana/grafana-oss:10.2.3
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      POSTGRES_DATA_VIS_USER: ${POSTGRES_DATA_VIS_USER}
+      POSTGRES_DATA_VIS_PASSWORD: ${POSTGRES_DATA_VIS_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - "3000:3000"
+    depends_on:
+      db-scheme:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
   ## ---------------------------------------------------------------------------------
   ## For debugging: use Redis Insight browser to explore the content of redis streams.
   ## ---------------------------------------------------------------------------------
@@ -98,3 +119,4 @@ services:
 volumes:
   redis-data:
   timescale-data:
+  grafana-data:
