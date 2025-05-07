@@ -19,6 +19,9 @@ This repository provides the source code for a step-by-step tutorial for the [Ra
 + **Step 5**:
   Integrate a new micro-service for forecasting the power output of a PV module based on the weather data.
   The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-5).
++ **Step 6**:
+  Integrate a custom data crawler for retrieving the power grid frequency from the public [Energy-Charts API](https://api.energy-charts.info/).
+  The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-6).
 
 ## Prerequisites
 
