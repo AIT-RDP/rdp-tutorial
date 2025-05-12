@@ -22,6 +22,9 @@ This repository provides the source code for a step-by-step tutorial for the [Ra
 + **Step 6**:
   Integrate a custom data crawler for retrieving the power grid frequency from the public [Energy-Charts API](https://api.energy-charts.info/).
   The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-6).
++ **Step 7**:
+  Configure a reverse proxy for securing access to the dashboard via TLS (using a self-signed certificate).
+  The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-7).
 
 ## Prerequisites
 
