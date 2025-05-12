@@ -1,3 +1,6 @@
+# Server certificates
+/certs/server*
+
 # Docker Compose environment definition file
 .env
 

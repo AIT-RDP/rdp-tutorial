@@ -22,6 +22,9 @@ This repository provides the source code for a step-by-step tutorial for the [Ra
 + **Step 6**:
   Integrate a custom data crawler for retrieving the power grid frequency from the public [Energy-Charts API](https://api.energy-charts.info/).
   The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-6).
++ **Step 7**:
+  Configure a reverse proxy for securing access to the dashboard via TLS (using a self-signed certificate).
+  The code is available [here](https://github.com/AIT-RDP/rdp-tutorial/tree/step-7).
 
 ## Prerequisites
 
@@ -29,12 +32,17 @@ You need to have [Docker](https://docs.docker.com/) and [Docker Compose](https:/
 
 ## Usage
 
+Generate a private key (`server.key`) and certificate (`server.crt`) in sub-directory `certs`:
+``` bash
+docker pull alpine/openssl
+docker run --rm -v .\certs:/certs alpine/openssl genrsa -out certs/server.key 2048
+docker run --rm -v .\certs:/certs alpine/openssl req -new -x509 -sha256 -key certs/server.key -out certs/server.crt -config certs/certs.cfg
+```
+
 Build the services and deploy the setup:
 ``` shell
 docker compose build
 docker compose up
 ```
 
-Inspect the Redis streams in your browser via: http://localhost:5540/
-
-View the dashboard in your browser via: http://localhost:3000
+View the dashboard in your browser via: https://localhost/grafana

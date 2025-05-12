@@ -10,9 +10,6 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
-    ## Expose ports only for debugging.
-    # ports:
-    #  - "6379:6379"
 
   ## -----------------------------------------------
   ## This micro-service retrieves weather forecasts.
@@ -39,9 +36,6 @@ services:
     volumes:
       - timescale-data:/var/lib/postgresql/data
     restart: unless-stopped
-    ## Expose ports only for debugging.
-    # ports:
-    #  - "5432:5432"
 
   ## ------------------------------------------------------------------------
   ## This micro-service defines the database schema used by the timescale DB.
@@ -85,6 +79,8 @@ services:
   grafana:
     image: grafana/grafana-oss:10.2.3
     environment:
+      GF_SERVER_ROOT_URL: "https://%(domain)s:443/grafana"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
       POSTGRES_DATA_VIS_USER: ${POSTGRES_DATA_VIS_USER}
@@ -92,12 +88,17 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
-    ports:
-      - "3000:3000"
     depends_on:
       db-scheme:
         condition: service_completed_successfully
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=HostRegexp(`localhost`) && (Path(`/grafana`) || PathPrefix(`/grafana/`))"
+      - "traefik.http.routers.grafana.service=service-grafana"
+      - "traefik.http.services.service-grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.entrypoints=web,websecure"
+      - "traefik.http.routers.grafana.tls=true"
 
   ## ------------------------------------------------------------------------------------
   ## This micro-service uses the latest forecast data for running a PV module simulation.
@@ -125,21 +126,27 @@ services:
       - redis
     restart: unless-stopped
 
-  ## ---------------------------------------------------------------------------------
-  ## For debugging: use Redis Insight browser to explore the content of redis streams.
-  ## ---------------------------------------------------------------------------------
-  redis-insight:
-    image: redis/redisinsight
-    restart: unless-stopped
-    environment:
-      - RI_REDIS_HOST0=redis
-      - RI_REDIS_PORT0=6379
-      - RI_REDIS_PASSWORD0=${REDIS_PASSWORD}
-      - RI_REDIS_ALIAS0=Tutorial Redis Database
+  ## --------------------------------------------------
+  ## Use a reverse proxy to secure this RDP deployment.
+  ## --------------------------------------------------
+  reverse-proxy:
+    image: traefik:v3.4
     ports:
-      - 5540:5540
-    depends_on:
-      - redis
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/certs
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
+    command:
+      - "--log.level=INFO"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.websecure.address=:443"
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.watch=true"
+      - "--providers.file.directory=/etc/certs"
 
 volumes:
   redis-data:
