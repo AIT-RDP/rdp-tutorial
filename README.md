@@ -35,9 +35,13 @@ You need to have [Docker](https://docs.docker.com/) and [Docker Compose](https:/
 Generate a private key (`server.key`) and certificate (`server.crt`) in sub-directory `certs`:
 ``` bash
 docker pull alpine/openssl
-docker run --rm -v .\certs:/certs alpine/openssl genrsa -out certs/server.key 2048
-docker run --rm -v .\certs:/certs alpine/openssl req -new -x509 -sha256 -key certs/server.key -out certs/server.crt -config certs/certs.cfg
+docker run --rm -v $PWD/certs:/certs alpine/openssl genrsa -out certs/server.key 2048
+docker run --rm -v $PWD/certs:/certs alpine/openssl req -new -x509 -sha256 -key certs/server.key -out certs/server.crt -config certs/certs.cfg
 ```
+
+All secrets and variables are managed via environment variables.
+For this simple example, it is recommended to define them via an `.env` file.
+You may have a look at the example file [`.env.example`](.env.example) for a list of expected variables.
 
 Build the services and deploy the setup:
 ``` shell
